@@ -1,0 +1,310 @@
+.page {
+  min-height: 100dvh;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--gutter);
+  padding-top: max(var(--gutter), env(safe-area-inset-top));
+  padding-bottom: max(var(--gutter), env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.85em;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  margin: 0 0 16px;
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 20px;
+  font-size: 1em;
+  text-decoration: none;
+}
+
+.banner {
+  margin: 0;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  background: rgb(245 184 75 / 0.12);
+  border: 1px solid rgb(245 184 75 / 0.4);
+  color: var(--warning);
+}
+
+.banner code {
+  color: var(--text);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.control {
+  min-height: 140px;
+  padding: 20px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 6px;
+  text-align: left;
+  transition: transform 80ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.control:hover {
+  border-color: var(--accent);
+}
+
+.control:active {
+  transform: scale(0.97);
+}
+
+.control:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.control.go {
+  background: rgb(60 207 142 / 0.14);
+  border-color: rgb(60 207 142 / 0.5);
+}
+
+.control.stop {
+  background: rgb(255 107 107 / 0.12);
+  border-color: rgb(255 107 107 / 0.5);
+}
+
+.control.pressed {
+  border-color: var(--text);
+  background: var(--accent);
+}
+
+.control-label {
+  font-size: 1.4em;
+  font-weight: 700;
+}
+
+.control-hint {
+  font-size: 0.9em;
+  color: var(--text-muted);
+}
+
+.control.pressed .control-hint {
+  color: var(--text);
+}
+
+.log-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.small {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 0.9em;
+}
+
+.log {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 0.85em;
+}
+
+.log li {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 12px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.log li:last-child {
+  border-bottom: none;
+}
+
+.log .time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.log .in .dir {
+  color: var(--success);
+}
+
+.log .out .dir {
+  color: var(--accent);
+}
+
+.log code {
+  overflow-wrap: anywhere;
+}
+
+.log .empty {
+  display: block;
+  color: var(--text-muted);
+}
+
+/* System status card, driven by { "type": "system", "status": "..." } from TD */
+.system {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.system p {
+  margin: 0;
+}
+
+.system-text {
+  flex: 1;
+}
+
+.system-label {
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.system-state {
+  font-size: 1.8em;
+  font-weight: 700;
+}
+
+.system-time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.system-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.system-detail {
+  margin-top: 2px !important;
+  font-size: 1.15em;
+  color: var(--text);
+  opacity: 0.85;
+}
+
+/* idle: waiting for the next guest to enter their name */
+.system.idle .system-dot {
+  background: var(--text-muted);
+}
+
+/* ready: a guest has checked in, staff should act */
+.system.ready {
+  background: rgb(245 184 75 / 0.14);
+  border-color: rgb(245 184 75 / 0.6);
+}
+
+.system.ready .system-dot {
+  background: var(--warning);
+  box-shadow: 0 0 0 6px rgb(245 184 75 / 0.25);
+}
+
+/* tracking (and any unlisted status) */
+.system.active {
+  background: rgb(124 108 255 / 0.14);
+  border-color: rgb(124 108 255 / 0.5);
+}
+
+.system.active .system-dot {
+  background: var(--accent);
+}
+
+/* recording: red, pulsing "on air" dot */
+.system.live {
+  background: rgb(255 107 107 / 0.12);
+  border-color: rgb(255 107 107 / 0.5);
+}
+
+.system.live .system-dot {
+  background: var(--danger);
+  animation: live 1.2s ease-in-out infinite;
+}
+
+/* recorded / captured / uploaded: completed steps */
+.system.done {
+  background: rgb(60 207 142 / 0.14);
+  border-color: rgb(60 207 142 / 0.5);
+}
+
+.system.done .system-dot {
+  background: var(--success);
+}
+
+@keyframes live {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 107 107 / 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgb(255 107 107 / 0);
+  }
+}
+
+/* Buttons disabled by the current system status (see disabledWhen in staff.ts) */
+.control:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  border-color: var(--border);
+}

@@ -1,0 +1,7 @@
+{
+  "/api/kiosk": {
+    "target": "http://192.168.10.94:18080",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

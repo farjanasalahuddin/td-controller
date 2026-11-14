@@ -1,0 +1,6 @@
+<span class="pill" [class]="td.status()" [attr.title]="td.url()">
+  <span class="dot"></span>
+  @if (showLabel()) {
+    <span class="label">{{ labels[td.status()] }}</span>
+  }
+</span>

@@ -25,6 +25,31 @@ const angularApp = new AngularNodeAppEngine();
  */
 
 /**
+ * Forward /api/kiosk/* to the kiosk backend. The browser can't call it directly because
+ * the backend doesn't send CORS headers; same-origin requests through here avoid that.
+ * (During `ng serve`, proxy.conf.json does the same job.)
+ */
+const KIOSK_API = process.env['KIOSK_API'] || 'http://192.168.10.94:18080';
+
+app.use('/api/kiosk', express.raw({ type: '*/*', limit: '1mb' }), async (req, res) => {
+  try {
+    const hasBody = !['GET', 'HEAD'].includes(req.method) && Buffer.isBuffer(req.body);
+    const upstream = await fetch(KIOSK_API + req.originalUrl, {
+      method: req.method,
+      headers: { 'content-type': req.get('content-type') ?? 'application/json' },
+      body: hasBody ? req.body : undefined,
+    });
+    res.status(upstream.status);
+    const type = upstream.headers.get('content-type');
+    if (type) res.type(type);
+    res.send(Buffer.from(await upstream.arrayBuffer()));
+  } catch (err) {
+    console.error('Kiosk API unreachable', err);
+    res.status(502).json({ error: 'Kiosk API unreachable' });
+  }
+});
+
+/**
  * Serve static files from /browser
  */
 app.use(

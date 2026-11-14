@@ -1,0 +1,12 @@
+<main class="page">
+  <app-connection-status class="status" [showLabel]="td.status() !== 'connected'" />
+
+  @switch (td.screen()) {
+    @case ('qr') {
+      <app-qr-display />
+    }
+    @default {
+      <app-welcome />
+    }
+  }
+</main>

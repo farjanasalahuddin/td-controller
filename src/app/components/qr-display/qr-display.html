@@ -1,0 +1,18 @@
+<section class="card">
+  <div class="text">
+    <p class="eyebrow">All done{{ td.guestName() ? ', ' + td.guestName() : '' }}!</p>
+    <h1>Scan to take it with you</h1>
+    <p class="lead">Point your phone's camera at the code.</p>
+    <button class="btn" type="button" (click)="done()">Done</button>
+  </div>
+
+  <div class="qr">
+    @if (error()) {
+      <p class="qr-error">Couldn't create the QR code. Please ask a member of staff.</p>
+    } @else if (src()) {
+      <img [src]="src()" alt="QR code" />
+    } @else {
+      <div class="qr-placeholder" aria-hidden="true"></div>
+    }
+  </div>
+</section>

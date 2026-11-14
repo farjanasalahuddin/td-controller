@@ -1,0 +1,80 @@
+<main class="page">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Staff</p>
+      <h1>Control panel</h1>
+    </div>
+    <div class="topbar-actions">
+      <app-connection-status />
+      <a class="btn btn-ghost link" routerLink="/">Guest screen</a>
+    </div>
+  </header>
+
+  @if (td.status() !== 'connected') {
+    <p class="banner">
+      Not connected to TouchDesigner at <code>{{ td.url() }}</code>. Button presses are queued and
+      sent once it reconnects.
+    </p>
+  }
+
+  <section class="system" [class]="status()?.tone ?? 'unknown'" aria-live="polite">
+    <span class="system-dot" aria-hidden="true"></span>
+    <div class="system-text">
+      <p class="system-label">System status</p>
+      <p class="system-state">{{ status()?.label ?? 'Waiting for TD…' }}</p>
+      @if (status()?.detail; as detail) {
+        <p class="system-detail">{{ detail }}</p>
+      }
+    </div>
+    @if (td.systemStatusAt(); as at) {
+      <p class="system-time">{{ at | date: 'HH:mm:ss' }}</p>
+    }
+  </section>
+
+  @for (group of groups; track group.title) {
+    <section class="group">
+      <h2>{{ group.title }}</h2>
+      <div class="grid">
+        @for (button of group.buttons; track button.id) {
+          <button
+            type="button"
+            class="control"
+            [class.go]="button.tone === 'go'"
+            [class.stop]="button.tone === 'stop'"
+            [class.pressed]="lastPressed() === button.id"
+            [disabled]="isDisabled(button)"
+            (click)="press(button)"
+          >
+            <span class="control-label">{{ button.label }}</span>
+            @if (button.hint) {
+              <span class="control-hint">{{ button.hint }}</span>
+            }
+          </button>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="group">
+    <div class="log-header">
+      <h2>Messages</h2>
+      <button type="button" class="btn btn-ghost small" (click)="showLog.set(!showLog())">
+        {{ showLog() ? 'Hide' : 'Show' }}
+      </button>
+    </div>
+
+    @if (showLog()) {
+      <ol class="log">
+        @for (entry of td.log(); track $index) {
+          <li [class]="entry.direction">
+            <span class="time">{{ entry.time | date: 'HH:mm:ss' }}</span>
+            <span class="dir">{{ entry.direction === 'in' ? 'TD →' : '→ TD' }}</span>
+            <code>{{ entry.text }}</code>
+          </li>
+        } @empty {
+          <li class="empty">No messages yet.</li>
+        }
+      </ol>
+    }
+  </section>
+</main>

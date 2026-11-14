@@ -1,0 +1,30 @@
+@if (td.screen() === 'waiting') {
+  <section class="card waiting">
+    <div class="spinner" aria-hidden="true"></div>
+    <h1>Thanks, {{ td.guestName() }}!</h1>
+    <p class="lead">Hang tight — your experience is being prepared.</p>
+    <button class="btn btn-ghost" type="button" (click)="startOver()">Not you? Start over</button>
+  </section>
+} @else {
+  <section class="card">
+    <p class="eyebrow">Welcome</p>
+    <h1>What's your name?</h1>
+    <p class="lead">Enter your name to get started.</p>
+
+    <form (submit)="submit($event)">
+      <input
+        class="input"
+        type="text"
+        name="name"
+        placeholder="Your name"
+        autocomplete="off"
+        autocapitalize="words"
+        enterkeyhint="go"
+        maxlength="40"
+        [value]="name()"
+        (input)="name.set($any($event.target).value)"
+      />
+      <button class="btn" type="submit" [disabled]="!name().trim()">Continue</button>
+    </form>
+  </section>
+}
