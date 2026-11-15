@@ -42,8 +42,16 @@
       @let k = key(guest, $index);
       <li>
         <button type="button" class="row" [class.open]="selected() === k" (click)="toggle(k)">
-          <span class="name">{{ guest.name || '(no name)' }}</span>
-          <span class="when">{{ when(guest) }}</span>
+          <span class="text">
+            <span class="name">{{ guest.name || '(no name)' }}</span>
+            <span class="when">{{ when(guest) }}</span>
+          </span>
+          @let photo = photoUrl(guest);
+          @if (photo && !brokenPhotos().has(photo)) {
+            <img class="thumb" [src]="photo" alt="" loading="lazy" (error)="photoFailed(photo)" />
+          } @else {
+            <span class="thumb none" aria-hidden="true">No photo</span>
+          }
         </button>
         @if (selected() === k) {
           <dl class="details">
@@ -53,6 +61,19 @@
             <dd>{{ guest.timeText || '—' }}</dd>
             <dt>UUID</dt>
             <dd><code>{{ guest.uuid || '—' }}</code></dd>
+            <dd class="actions">
+              <button
+                type="button"
+                class="btn"
+                [disabled]="!guest.uuid || qrBlocked()"
+                (click)="showQr(guest)"
+              >
+                {{ qrSent() === guest.uuid ? 'Sent to guest iPad ✓' : 'Show QR on guest iPad' }}
+              </button>
+              @if (qrBlocked()) {
+                <span class="hint">Finish the current guest first</span>
+              }
+            </dd>
           </dl>
         }
       </li>

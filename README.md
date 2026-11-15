@@ -45,7 +45,7 @@ Production build: `ng build`, then `npm run serve:ssr:td-controller` (serves on 
 - **System status card** — current TD status with the time it arrived.
 - **Control buttons** — each press sends `{"type":"button","id":"<id>"}` to TD. Buttons are disabled based on the current status.
 - **Messages log** — last 50 messages to and from TD, for debugging.
-- **Search guest** — opens a full-screen search. Opening it (or tapping Refresh) asks TD for its guest table; the staff iPad then filters it as you type (name, ignoring case and accents, or the start of a UUID), newest first. Tapping a guest shows their name, upload time and UUID. The list is cleared when the search is closed. If TD doesn't answer within 5 seconds it shows "Try again".
+- **Search guest** — opens a full-screen search. Opening it (or tapping Refresh) asks TD for its guest table; the staff iPad then filters it as you type (name, ignoring case and accents, or the start of a UUID), newest first. Each row shows a thumbnail of the guest's photo from the kiosk backend (`https://192.168.10.94:18443/public/sessions/<uuid>/files/<name>-image.jpg`, `PHOTO_BASE` in `td-socket.ts`), or "No photo" if it can't load. Tapping a guest shows their name, upload time and UUID, and a **Show QR on guest iPad** button (disabled while a guest is in progress — `ready` through `uploading` — because the QR screen's Done sends `reset`). The list is cleared when the search is closed. If TD doesn't answer within 5 seconds it shows "Try again".
 
 There is no login on `/staff`; it is simply not linked from the guest page.
 
@@ -61,6 +61,7 @@ All messages are JSON.
 | `{"type":"name","value":"Sam","id":"<uuid>"}` | Guest taps Continue |
 | `{"type":"button","id":"start"}` | Staff button pressed (ids below) |
 | `{"type":"get_guests"}` | Staff opens Search guest or taps Refresh |
+| `{"type":"show_guest_qr","id":"<uuid>"}` | Staff taps Show QR on a guest in the search. TD should forward `{"type":"show_qr","id":"<uuid>"}` to the guest iPad |
 | `{"type":"button","id":"reset"}` | Staff "Reset guest", guest "Not you? Start over", or guest Done on the QR screen (also after the 2-minute timeout) |
 
 ### TD → tablet
@@ -70,6 +71,7 @@ All messages are JSON.
 | `{"type":"system","status":"<status>"}` | Updates the staff status card (optional `"name":"Sam"`) |
 | `{"type":"system","status":"uploaded"}` | Also makes the guest iPad show a QR code for `https://192.168.10.94:18443/s/<uuid>` (the guest's UUID; optional `"id"` overrides it). Base link: `QR_LINK_BASE` in `td-socket.ts` |
 | `{"type":"show_qr","url":"https://…"}` | Guest iPad shows a QR code for the URL |
+| `{"type":"show_qr","id":"<uuid>"}` | Guest iPad shows the QR code for that guest (`QR_LINK_BASE` + uuid) |
 | `{"type":"show_qr","image":"data:image/png;base64,…"}` | Guest iPad shows that image as-is |
 | `{"type":"reset"}` | Guest iPad returns to Welcome |
 | `{"type":"guests","guests":[{"UUID":"…","Sl_Name":"Sam","Time":"2026-11-15 14:32:05"}, …]}` | Reply to `get_guests` (send it only to the asking tablet). Keys are matched case-insensitively, ignoring `_`/`-`/spaces: `Sl_Name`/`name`/`fullName`, `UUID`/`id`, `Time`/`datetime`/`date`/`timestamp`; other columns (`Video_File`, `Photo_File`) are ignored. `Time` is the upload time and should include the date (`YYYY-MM-DD HH:MM:SS` or ISO) |

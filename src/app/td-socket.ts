@@ -9,6 +9,8 @@ const TD_PORT = 9980;
 const RECONNECT_MS = 2000;
 /** Guest's content page; the QR code shown after upload links to QR_LINK_BASE + <uuid>. */
 const QR_LINK_BASE = 'https://192.168.10.94:18443/s/';
+/** Uploaded files on the kiosk backend: PHOTO_BASE + <uuid> + /files/<name>-image.jpg */
+const PHOTO_BASE = 'https://192.168.10.94:18443/public/sessions/';
 /** Give up waiting for TD's guest list after this long. */
 const GUESTS_TIMEOUT_MS = 5000;
 
@@ -37,6 +39,8 @@ export interface LogEntry {
  * Messages TD can send to the browser:
  *   { "type": "show_qr", "url": "https://..." }   -> home shows a QR code for that URL
  *   { "type": "show_qr", "image": "data:image/png;base64,..." } -> home shows that image as-is
+ *   { "type": "show_qr", "id": "<uuid>" }          -> home shows the QR for QR_LINK_BASE + uuid
+ *        (TD forwards this after staff press Show QR on a guest in the search)
  *   { "type": "reset" }                            -> home goes back to the welcome screen
  *   { "type": "guests", "guests": [ { "UUID": "...", "Sl_Name": "Sam", "Time": "2026-11-15 14:32:05" }, ... ] }
  *        -> reply to get_guests; the staff search filters this list. Keys are matched
@@ -55,6 +59,8 @@ export interface LogEntry {
  *   { "type": "name",   "value": "Sam", "id": "<uuid>" } -> guest submitted their name; id is a
  *        new UUID v4 for this guest (use it for file names / the upload)
  *   { "type": "get_guests" }                       -> staff opened Search guest; reply with "guests"
+ *   { "type": "show_guest_qr", "id": "<uuid>" }    -> staff tapped Show QR for a returning guest;
+ *        TD should send { "type": "show_qr", "id": "<uuid>" } to the home tablet
  *   { "type": "button", "id": "start" }            -> a staff (or guest) button was pressed
  *        Guest tablet sends "reset" from "Not you? Start over" and from Done / QR timeout
  *        (same id as the staff Reset guest button)
@@ -160,6 +166,11 @@ export class TdSocket {
     }, GUESTS_TIMEOUT_MS);
   }
 
+  /** Staff: ask TD to show a returning guest's QR code on the guest iPad. */
+  showGuestQr(id: string) {
+    this.send({ type: 'show_guest_qr', id });
+  }
+
   /** Forget the guest list (search closed), so names don't stay on the staff iPad. */
   clearGuests() {
     clearTimeout(this.guestsTimer);
@@ -191,11 +202,14 @@ export class TdSocket {
 
     const data = msg as Record<string, unknown>;
     switch (data['type']) {
-      case 'show_qr':
-        this.qrUrl.set(typeof data['url'] === 'string' ? data['url'] : null);
+      case 'show_qr': {
+        const id = typeof data['id'] === 'string' ? data['id'].trim() : '';
+        const url = typeof data['url'] === 'string' ? data['url'] : id ? qrLink(id) : null;
+        this.qrUrl.set(url);
         this.qrImage.set(typeof data['image'] === 'string' ? data['image'] : null);
         if (this.qrUrl() || this.qrImage()) this.screen.set('qr');
         break;
+      }
       case 'reset':
         this.resetHome();
         break;
@@ -238,7 +252,7 @@ export class TdSocket {
     }
 
     this.qrImage.set(null);
-    this.qrUrl.set(QR_LINK_BASE + encodeURIComponent(id));
+    this.qrUrl.set(qrLink(id));
     this.screen.set('qr');
   }
 
@@ -256,6 +270,17 @@ function resolveTdUrl(): string {
   const override = new URLSearchParams(location.search).get('td');
   if (override) return override.startsWith('ws') ? override : `ws://${override}`;
   return `ws://${location.hostname || 'localhost'}:${TD_PORT}`;
+}
+
+/** Link the guest's QR code points to. */
+function qrLink(uuid: string): string {
+  return QR_LINK_BASE + encodeURIComponent(uuid);
+}
+
+/** The guest's photo on the kiosk backend (used as a thumbnail in the staff search). */
+export function guestPhotoUrl(guest: Guest): string | null {
+  if (!guest.uuid || !guest.name) return null;
+  return `${PHOTO_BASE}${encodeURIComponent(guest.uuid)}/files/${encodeURIComponent(guest.name)}-image.jpg`;
 }
 
 /** Turn one entry of TD's guest list into a Guest. Header names are matched loosely. */

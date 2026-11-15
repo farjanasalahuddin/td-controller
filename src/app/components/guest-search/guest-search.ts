@@ -1,9 +1,14 @@
 import { Component, DestroyRef, computed, inject, output, signal } from '@angular/core';
 import { formatDate } from '@angular/common';
-import { Guest, TdSocket } from '../../td-socket';
+import { Guest, TdSocket, guestPhotoUrl } from '../../td-socket';
 
 /** Don't render more rows than this at once; typing narrows it down. */
 const MAX_ROWS = 100;
+/**
+ * Show QR is disabled while one of these is the system status: the guest iPad is busy
+ * with the current guest, and the QR screen's Done/timeout sends "reset" to TD.
+ */
+const GUEST_IN_PROGRESS = ['ready', 'tracking', 'recording', 'recorded', 'captured', 'uploading'];
 
 /**
  * Full-screen guest search for the staff iPad.
@@ -37,6 +42,13 @@ export class GuestSearch {
   });
 
   protected readonly shown = computed(() => this.matches().slice(0, MAX_ROWS));
+  /** Thumbnails that failed to load (not uploaded yet, wrong name, untrusted certificate…). */
+  protected readonly brokenPhotos = signal<ReadonlySet<string>>(new Set());
+  protected readonly qrBlocked = computed(() => GUEST_IN_PROGRESS.includes(this.td.systemStatus() ?? ''));
+  /** UUID whose QR was just sent, for brief "Sent" feedback. */
+  protected readonly qrSent = signal<string | null>(null);
+  private qrSentTimer?: ReturnType<typeof setTimeout>;
+  protected readonly photoUrl = guestPhotoUrl;
   protected readonly maxRows = MAX_ROWS;
 
   constructor() {
@@ -51,6 +63,18 @@ export class GuestSearch {
 
   protected toggle(key: string) {
     this.selected.set(this.selected() === key ? null : key);
+  }
+
+  protected showQr(guest: Guest) {
+    if (!guest.uuid || this.qrBlocked()) return;
+    this.td.showGuestQr(guest.uuid);
+    this.qrSent.set(guest.uuid);
+    clearTimeout(this.qrSentTimer);
+    this.qrSentTimer = setTimeout(() => this.qrSent.set(null), 2000);
+  }
+
+  protected photoFailed(url: string) {
+    this.brokenPhotos.update(set => new Set(set).add(url));
   }
 
   protected key(guest: Guest, index: number): string {
