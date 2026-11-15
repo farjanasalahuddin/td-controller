@@ -37,7 +37,6 @@ const GROUPS: ButtonGroup[] = [
   {
     title: 'Guest screen',
     buttons: [
-      { id: 'show_qr', label: 'Show QR', hint: 'Ask TD to send the QR to the guest tablet', disabledWhen: ['idle', 'ready', 'tracking', 'recording', 'uploading'] },
       { id: 'reset', label: 'Reset guest', hint: 'Back to the welcome screen', disabledWhen: ['tracking', 'recording', 'uploading'] },
     ],
   },

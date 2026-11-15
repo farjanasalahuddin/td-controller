@@ -82,17 +82,17 @@ Non-JSON replies from TD are logged but otherwise ignored (they no longer close 
 
 Sequence for one guest: `idle → ready → tracking → recording → recorded → captured → uploading → uploaded → idle`
 
-| Status | Card shows | Start | Stop | Capture | Upload | Show QR | Reset |
-|---|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `idle` | Waiting for guest | – | – | – | – | – | ✓ |
-| `ready` | Ready to capture · Guest Sam is here | ✓ | – | – | – | – | ✓ |
-| `tracking` | Tracking | – | ✓ | – | – | – | – |
-| `recording` | Recording | – | ✓ | – | – | – | – |
-| `recorded` | Recording saved | ✓ | ✓ | ✓ | – | ✓ | ✓ |
-| `captured` | Image captured | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `uploading` | Uploading… · Sending photos and video to the server | – | ✓ | – | – | – | – |
-| `uploaded` | Uploaded | ✓ | ✓ | ✓ | – | ✓ | ✓ |
-| *(none yet)* | Waiting for TD… | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Status | Card shows | Start | Stop | Capture | Upload | Reset |
+|---|---|:-:|:-:|:-:|:-:|:-:|
+| `idle` | Waiting for guest | – | – | – | – | ✓ |
+| `ready` | Ready to capture · Guest Sam is here | ✓ | – | – | – | ✓ |
+| `tracking` | Tracking | – | ✓ | – | – | – |
+| `recording` | Recording | – | ✓ | – | – | – |
+| `recorded` | Recording saved | ✓ | ✓ | ✓ | – | ✓ |
+| `captured` | Image captured | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `uploading` | Uploading… · Sending photos and video to the server | – | ✓ | – | – | – |
+| `uploaded` | Uploaded | ✓ | ✓ | ✓ | – | ✓ |
+| *(none yet)* | Waiting for TD… | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 Unknown statuses are shown as their raw text. Labels and colours are in `STATUSES`, button rules in `GROUPS` (`disabledWhen`), both in [`src/app/pages/staff/staff.ts`](src/app/pages/staff/staff.ts).
 
