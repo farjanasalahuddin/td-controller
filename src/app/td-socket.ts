@@ -38,9 +38,11 @@ export interface LogEntry {
  *   { "type": "show_qr", "url": "https://..." }   -> home shows a QR code for that URL
  *   { "type": "show_qr", "image": "data:image/png;base64,..." } -> home shows that image as-is
  *   { "type": "reset" }                            -> home goes back to the welcome screen
- *   { "type": "guests", "guests": [ { "name": "Sam", "uuid": "...", "time": "2026-11-15 14:32:05" }, ... ] }
+ *   { "type": "guests", "guests": [ { "UUID": "...", "Sl_Name": "Sam", "Time": "2026-11-15 14:32:05" }, ... ] }
  *        -> reply to get_guests; the staff search filters this list. Keys are matched
- *           case-insensitively (name/fullName, uuid/id, time/datetime/date/timestamp).
+ *           case-insensitively, ignoring _ - and spaces (Sl_Name/name/fullName, uuid/id,
+ *           time/datetime/date/timestamp). Other columns (Video_File, ...) are ignored.
+ *           Time = upload time (TD adds the row when the upload succeeds).
  *   { "type": "system", "status": "tracking" }     -> staff page status card. Known statuses:
  *        idle | ready | tracking | recording | recorded | captured | uploaded
  *        (anything else is shown as-is). Optional "name" adds the guest's name,
@@ -264,7 +266,7 @@ function toGuest(row: unknown): Guest | null {
   );
   const pick = (...keys: string[]) => keys.map(k => byKey.get(k)).find(v => v) ?? '';
 
-  const name = pick('name', 'fullname', 'guest', 'guestname');
+  const name = pick('slname', 'name', 'fullname', 'guest', 'guestname');
   const uuid = pick('uuid', 'id', 'guestid', 'sessionid');
   if (!name && !uuid) return null; // blank row
 
