@@ -7,6 +7,8 @@ import { repeat, retry, timer } from 'rxjs';
 const TD_PORT = 9980;
 /** How long to wait before reconnecting after the socket drops. */
 const RECONNECT_MS = 2000;
+/** Guest's content page; the QR code shown after upload links to QR_LINK_BASE + <uuid>. */
+const QR_LINK_BASE = 'https://192.168.10.94:18443/s/';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'closed';
 export type ClientRole = 'home' | 'staff';
@@ -28,6 +30,8 @@ export interface LogEntry {
  *        idle | ready | tracking | recording | recorded | captured | uploaded
  *        (anything else is shown as-is). Optional "name" adds the guest's name,
  *        e.g. { "type": "system", "status": "ready", "name": "Sam" }
+ *        On "uploaded" the guest iPad shows a QR for QR_LINK_BASE + the guest's UUID
+ *        (optional "id" in the message overrides the UUID it remembers).
  *
  * Messages the browser sends to TD:
  *   { "type": "hello",  "role": "home" | "staff" } -> sent on every (re)connect
@@ -157,9 +161,30 @@ export class TdSocket {
           this.systemStatusAt.set(new Date());
           const name = data['name'];
           this.systemGuestName.set(typeof name === 'string' && name.trim() ? name.trim() : null);
+
+          if (this.systemStatus() === 'uploaded') this.showUploadQr(data['id']);
         }
         break;
     }
+  }
+
+  /**
+   * Upload finished: show the guest a QR code for their content page.
+   * Uses the guest's own UUID; TD can also send it as "id" with the status
+   * (e.g. if this tablet reloaded and lost it).
+   */
+  private showUploadQr(idFromTd: unknown) {
+    if (this.role !== 'home') return; // only the guest iPad shows the QR
+
+    const id = typeof idFromTd === 'string' && idFromTd.trim() ? idFromTd.trim() : this.guestId();
+    if (!id) {
+      console.warn('[QR] "uploaded" received but no guest UUID is known; not showing a QR code');
+      return;
+    }
+
+    this.qrImage.set(null);
+    this.qrUrl.set(QR_LINK_BASE + encodeURIComponent(id));
+    this.screen.set('qr');
   }
 
   private addLog(direction: LogEntry['direction'], text: string) {

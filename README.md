@@ -38,7 +38,7 @@ Production build: `ng build`, then `npm run serve:ssr:td-controller` (serves on 
 
 1. **Welcome** — guest types their name and taps Continue. The app creates a UUID for the guest, sends the name + UUID to TD, and registers the session with the kiosk backend.
 2. **Waiting** — "Thanks, Sam!" until TD sends the QR code. "Not you? Start over" resets.
-3. **QR** — shows a QR code for the URL TD sent. Done (or 2 minutes of inactivity) returns to Welcome.
+3. **QR** — appears automatically when TD reports `uploaded`: a QR code linking to the guest's content page (built from their UUID). TD can also send its own URL with `show_qr`. Done (or 2 minutes of inactivity) returns to Welcome.
 
 ### Staff (`/staff`)
 
@@ -67,6 +67,7 @@ All messages are JSON.
 | Message | Effect |
 |---|---|
 | `{"type":"system","status":"<status>"}` | Updates the staff status card (optional `"name":"Sam"`) |
+| `{"type":"system","status":"uploaded"}` | Also makes the guest iPad show a QR code for `https://192.168.10.94:18443/s/<uuid>` (the guest's UUID; optional `"id"` overrides it). Base link: `QR_LINK_BASE` in `td-socket.ts` |
 | `{"type":"show_qr","url":"https://…"}` | Guest iPad shows a QR code for the URL |
 | `{"type":"show_qr","image":"data:image/png;base64,…"}` | Guest iPad shows that image as-is |
 | `{"type":"reset"}` | Guest iPad returns to Welcome |
