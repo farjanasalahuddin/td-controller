@@ -38,7 +38,8 @@ export interface LogEntry {
  *   { "type": "name",   "value": "Sam", "id": "<uuid>" } -> guest submitted their name; id is a
  *        new UUID v4 for this guest (use it for file names / the upload)
  *   { "type": "button", "id": "start" }            -> a staff (or guest) button was pressed
- *        Guest tablet sends: "qr_done" (Done / QR timeout), "reset" ("Not you? Start over", same id as the staff Reset guest button)
+ *        Guest tablet sends "reset" from "Not you? Start over" and from Done / QR timeout
+ *        (same id as the staff Reset guest button)
  */
 @Injectable({
   providedIn: 'root',

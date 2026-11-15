@@ -40,7 +40,7 @@ export class QrDisplay {
   }
 
   protected done() {
-    this.td.pressButton('qr_done');
+    this.td.pressButton('reset');
     this.td.resetHome();
   }
 }

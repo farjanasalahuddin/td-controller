@@ -59,8 +59,7 @@ All messages are JSON.
 | `{"type":"hello","role":"home"\|"staff"}` | On every connect/reconnect |
 | `{"type":"name","value":"Sam","id":"<uuid>"}` | Guest taps Continue |
 | `{"type":"button","id":"start"}` | Staff button pressed (ids below) |
-| `{"type":"button","id":"reset"}` | Staff "Reset guest", or guest "Not you? Start over" |
-| `{"type":"button","id":"qr_done"}` | Guest taps Done on the QR screen (or it times out) |
+| `{"type":"button","id":"reset"}` | Staff "Reset guest", guest "Not you? Start over", or guest Done on the QR screen (also after the 2-minute timeout) |
 
 ### TD → tablet
 
