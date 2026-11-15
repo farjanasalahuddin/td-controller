@@ -1,0 +1,12 @@
+@for (image of images(); track image) {
+  <button type="button" class="thumb" (click)="enlarged.set(true)" aria-label="Show captured photo larger">
+    <img [src]="image" alt="Captured photo" />
+  </button>
+
+  @if (enlarged()) {
+    <div class="viewer" role="dialog" aria-modal="true" aria-label="Captured photo" (click)="enlarged.set(false)">
+      <img [src]="image" alt="Captured photo" />
+      <p>Tap anywhere to close</p>
+    </div>
+  }
+}

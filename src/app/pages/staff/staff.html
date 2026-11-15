@@ -26,10 +26,11 @@
       @if (status()?.detail; as detail) {
         <p class="system-detail">{{ detail }}</p>
       }
+      @if (td.systemStatusAt(); as at) {
+        <p class="system-time">{{ at | date: 'HH:mm:ss' }}</p>
+      }
     </div>
-    @if (td.systemStatusAt(); as at) {
-      <p class="system-time">{{ at | date: 'HH:mm:ss' }}</p>
-    }
+    <app-capture-preview />
   </section>
 
   @for (group of groups; track group.title) {

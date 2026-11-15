@@ -11,6 +11,8 @@ const RECONNECT_MS = 2000;
 const QR_LINK_BASE = 'https://192.168.10.94:18443/s/';
 /** Uploaded files on the kiosk backend: PHOTO_BASE + <uuid> + /files/<name>-image.jpg */
 const PHOTO_BASE = 'https://192.168.10.94:18443/public/sessions/';
+/** Longer log entries are cut off in the staff Messages log. */
+const MAX_LOG_CHARS = 200;
 /** Give up waiting for TD's guest list after this long. */
 const GUESTS_TIMEOUT_MS = 5000;
 
@@ -42,6 +44,9 @@ export interface LogEntry {
  *   { "type": "show_qr", "id": "<uuid>" }          -> home shows the QR for QR_LINK_BASE + uuid
  *        (TD forwards this after staff press Show QR on a guest in the search)
  *   { "type": "reset" }                            -> home goes back to the welcome screen
+ *   { "type": "capture_preview", "image": "data:image/jpeg;base64,..." }
+ *        -> staff status card shows this thumbnail of the photo just captured (before upload).
+ *           Replaced by the next capture; cleared when the status goes back to idle/ready.
  *   { "type": "guests", "guests": [ { "UUID": "...", "Sl_Name": "Sam", "Time": "2026-11-15 14:32:05" }, ... ] }
  *        -> reply to get_guests; the staff search filters this list. Keys are matched
  *           case-insensitively, ignoring _ - and spaces (Sl_Name/name/fullName, uuid/id,
@@ -86,6 +91,9 @@ export class TdSocket {
   readonly systemStatusAt = signal<Date | null>(null);
   /** Guest name sent with the latest system status, if any (e.g. with "ready"). */
   readonly systemGuestName = signal<string | null>(null);
+
+  /** Thumbnail of the current guest's latest capture (data: URL from TD), shown on the staff page. */
+  readonly capturePreview = signal<string | null>(null);
 
   /** Guest list from TD for the staff search. null = not loaded (or cleared on close). */
   readonly guests = signal<Guest[] | null>(null);
@@ -213,6 +221,12 @@ export class TdSocket {
       case 'reset':
         this.resetHome();
         break;
+      case 'capture_preview': {
+        const image = data['image'];
+        if (typeof image === 'string' && image.startsWith('data:image/')) this.capturePreview.set(image);
+        else console.warn('[TD →] capture_preview without a data:image/... "image"');
+        break;
+      }
       case 'guests':
         clearTimeout(this.guestsTimer);
         this.guestsLoading.set(false);
@@ -230,6 +244,8 @@ export class TdSocket {
           this.systemStatusAt.set(new Date());
           const name = data['name'];
           this.systemGuestName.set(typeof name === 'string' && name.trim() ? name.trim() : null);
+          // New guest cycle: don't show the previous guest's photo.
+          if (['idle', 'ready'].includes(this.systemStatus()!)) this.capturePreview.set(null);
 
           if (this.systemStatus() === 'uploaded') this.showUploadQr(data['id']);
         }
@@ -257,6 +273,10 @@ export class TdSocket {
   }
 
   private addLog(direction: LogEntry['direction'], text: string) {
+    // Keep big messages (e.g. capture_preview images) from flooding the staff log.
+    if (text.length > MAX_LOG_CHARS) {
+      text = `${text.slice(0, MAX_LOG_CHARS)}… (${Math.round(text.length / 1024)} KB)`;
+    }
     this.log.update(entries => [{ time: new Date(), direction, text }, ...entries].slice(0, 50));
   }
 }

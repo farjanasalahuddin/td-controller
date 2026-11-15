@@ -42,7 +42,7 @@ Production build: `ng build`, then `npm run serve:ssr:td-controller` (serves on 
 
 ### Staff (`/staff`)
 
-- **System status card** — current TD status with the time it arrived.
+- **System status card** — current TD status with the time it arrived. After a capture it also shows a thumbnail of the photo on the right (tap to enlarge); a new capture replaces it, and it clears when the status returns to `idle` / `ready`.
 - **Control buttons** — each press sends `{"type":"button","id":"<id>"}` to TD. Buttons are disabled based on the current status.
 - **Messages log** — last 50 messages to and from TD, for debugging.
 - **Search guest** — opens a full-screen search. Opening it (or tapping Refresh) asks TD for its guest table; the staff iPad then filters it as you type (name, ignoring case and accents, or the start of a UUID), newest first. Each row shows a thumbnail of the guest's photo from the kiosk backend (`https://192.168.10.94:18443/public/sessions/<uuid>/files/<name>-image.jpg`, `PHOTO_BASE` in `td-socket.ts`), or "No photo" if it can't load. Tapping a guest shows their name, upload time and UUID, and a **Show QR** button (sends it to the guest iPad) (disabled while a guest is in progress — `ready` through `uploading` — because the QR screen's Done sends `reset`). The list is cleared when the search is closed. If TD doesn't answer within 5 seconds it shows "Try again".
@@ -74,6 +74,7 @@ All messages are JSON.
 | `{"type":"show_qr","id":"<uuid>"}` | Guest iPad shows the QR code for that guest (`QR_LINK_BASE` + uuid) |
 | `{"type":"show_qr","image":"data:image/png;base64,…"}` | Guest iPad shows that image as-is |
 | `{"type":"reset"}` | Guest iPad returns to Welcome |
+| `{"type":"capture_preview","image":"data:image/jpeg;base64,…"}` | Staff status card shows this thumbnail of the photo just captured (send to `role='staff'` only, ~400px JPEG) |
 | `{"type":"guests","guests":[{"UUID":"…","Sl_Name":"Sam","Time":"2026-11-15 14:32:05"}, …]}` | Reply to `get_guests` (send it only to the asking tablet). Keys are matched case-insensitively, ignoring `_`/`-`/spaces: `Sl_Name`/`name`/`fullName`, `UUID`/`id`, `Time`/`datetime`/`date`/`timestamp`; other columns (`Video_File`, `Photo_File`) are ignored. `Time` is the upload time and should include the date (`YYYY-MM-DD HH:MM:SS` or ISO) |
 
 Non-JSON replies from TD are logged but otherwise ignored (they no longer close the socket).
@@ -102,6 +103,7 @@ The TD side lives in the `.toe` project, not this repo. It needs:
 
 - **Web Server DAT** on port `9980`. Its callbacks track connected tablets by role (from `hello`), handle `name` / `button` messages, and expose a `set_status(status, name=None)` helper that broadcasts `system` messages and stores the latest one, which is sent to each tablet on `hello`.
 - **Guest table** (Table DAT, also written to CSV) with a header row, `UUID | Sl_Name | Video_File | Photo_File | Time`, one row added when a guest's upload succeeds (so `Time` is the upload time and only guests with content are searchable). On `get_guests`, the callbacks turn each row into a dict using the header and reply with `webSocketSendText(client, ...)` to that tablet only.
+- **Capture preview**: after a capture, a Fit TOP (~400px) → `saveByteArray('.jpg')` → base64 → `send({'type':'capture_preview','image':'data:image/jpeg;base64,'+…}, role='staff')`.
 - **Execute DAT** `onStart` → `set_status('idle')`, so tablets never stay on "Waiting for TD…".
 - **Web Client DAT** + an upload Text DAT for sending the guest's photos/video to the backend as `multipart/form-data` (`POST /sessions/<uuid>/files`, field `files` repeated, plus `fullName`). Call `set_status('uploading')` when the request is sent; on a 2xx response → `set_status('uploaded')`.
 
@@ -134,6 +136,7 @@ src/app/
   components/qr-display/        QR code screen
   components/connection-status/ Connected / Connecting / Disconnected pill
   components/guest-search/      Staff guest search overlay
+  components/capture-preview/   Captured-photo thumbnail in the staff status card
 src/server.ts                   SSR server + /api/kiosk forwarding
 src/styles.css                  Global theme and touch-sized controls
 ```

@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TdSocket } from '../../td-socket';
 import { ConnectionStatus } from '../../components/connection-status/connection-status';
+import { CapturePreview } from '../../components/capture-preview/capture-preview';
 import { GuestSearch } from '../../components/guest-search/guest-search';
 
 interface StaffButton {
@@ -72,7 +73,7 @@ const STATUSES: Record<string, StatusDisplay> = {
 
 @Component({
   selector: 'app-staff',
-  imports: [ConnectionStatus, DatePipe, GuestSearch, RouterLink],
+  imports: [CapturePreview, ConnectionStatus, DatePipe, GuestSearch, RouterLink],
   templateUrl: './staff.html',
   styleUrl: './staff.css',
 })
