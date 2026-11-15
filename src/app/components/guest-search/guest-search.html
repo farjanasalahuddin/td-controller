@@ -64,11 +64,11 @@
             <dd class="actions">
               <button
                 type="button"
-                class="btn"
+                class="btn qr-btn"
                 [disabled]="!guest.uuid || qrBlocked()"
                 (click)="showQr(guest)"
               >
-                {{ qrSent() === guest.uuid ? 'Sent to guest iPad ✓' : 'Show QR on guest iPad' }}
+                {{ qrSent() === guest.uuid ? 'Sent ✓' : 'Show QR' }}
               </button>
               @if (qrBlocked()) {
                 <span class="hint">Finish the current guest first</span>

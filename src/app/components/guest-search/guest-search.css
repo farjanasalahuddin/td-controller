@@ -113,6 +113,13 @@ h2 {
   margin-top: 8px;
 }
 
+.qr-btn {
+  min-height: 48px;
+  min-width: 120px;
+  padding: 0 20px;
+  font-size: 1em;
+}
+
 .hint {
   color: var(--text-muted);
 }
