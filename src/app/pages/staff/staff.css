@@ -270,6 +270,18 @@ h2 {
   background: var(--accent);
 }
 
+/* uploading: purple, pulsing dot = work in progress */
+.system.busy {
+  background: rgb(124 108 255 / 0.14);
+  border-color: rgb(124 108 255 / 0.5);
+}
+
+.system.busy .system-dot {
+  color: var(--accent);
+  background: currentColor;
+  animation: ring 1.2s ease-in-out infinite;
+}
+
 /* recording: red, pulsing "on air" dot */
 .system.live {
   background: rgb(255 107 107 / 0.12);
@@ -277,8 +289,9 @@ h2 {
 }
 
 .system.live .system-dot {
-  background: var(--danger);
-  animation: live 1.2s ease-in-out infinite;
+  color: var(--danger);
+  background: currentColor;
+  animation: ring 1.2s ease-in-out infinite;
 }
 
 /* recorded / captured / uploaded: completed steps */
@@ -291,13 +304,14 @@ h2 {
   background: var(--success);
 }
 
-@keyframes live {
+/* Pulsing ring in the dot's own colour (recording, uploading) */
+@keyframes ring {
+  50% {
+    box-shadow: 0 0 0 10px transparent;
+  }
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(255 107 107 / 0.6);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgb(255 107 107 / 0);
+    box-shadow: 0 0 0 0 currentColor;
   }
 }
 

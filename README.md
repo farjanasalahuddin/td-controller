@@ -75,7 +75,7 @@ Non-JSON replies from TD are logged but otherwise ignored (they no longer close 
 
 ### System statuses
 
-Sequence for one guest: `idle → ready → tracking → recording → recorded → captured → uploaded → idle`
+Sequence for one guest: `idle → ready → tracking → recording → recorded → captured → uploading → uploaded → idle`
 
 | Status | Card shows | Start | Stop | Capture | Upload | Show QR | Reset |
 |---|---|:-:|:-:|:-:|:-:|:-:|:-:|
@@ -85,6 +85,7 @@ Sequence for one guest: `idle → ready → tracking → recording → recorded 
 | `recording` | Recording | – | ✓ | – | – | – | – |
 | `recorded` | Recording saved | ✓ | ✓ | ✓ | – | ✓ | ✓ |
 | `captured` | Image captured | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `uploading` | Uploading… · Sending photos and video to the server | – | ✓ | – | – | – | – |
 | `uploaded` | Uploaded | ✓ | ✓ | ✓ | – | ✓ | ✓ |
 | *(none yet)* | Waiting for TD… | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
@@ -96,7 +97,7 @@ The TD side lives in the `.toe` project, not this repo. It needs:
 
 - **Web Server DAT** on port `9980`. Its callbacks track connected tablets by role (from `hello`), handle `name` / `button` messages, and expose a `set_status(status, name=None)` helper that broadcasts `system` messages and stores the latest one, which is sent to each tablet on `hello`.
 - **Execute DAT** `onStart` → `set_status('idle')`, so tablets never stay on "Waiting for TD…".
-- **Web Client DAT** + an upload Text DAT for sending the guest's photos/video to the backend as `multipart/form-data` (`POST /sessions/<uuid>/files`, field `files` repeated, plus `fullName`). On a 2xx response → `set_status('uploaded')`.
+- **Web Client DAT** + an upload Text DAT for sending the guest's photos/video to the backend as `multipart/form-data` (`POST /sessions/<uuid>/files`, field `files` repeated, plus `fullName`). Call `set_status('uploading')` when the request is sent; on a 2xx response → `set_status('uploaded')`.
 
 Send each status when the step has actually happened in TD (e.g. `uploaded` from the upload response), not when the button is pressed.
 

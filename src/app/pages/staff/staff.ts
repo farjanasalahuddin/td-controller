@@ -27,22 +27,22 @@ const GROUPS: ButtonGroup[] = [
   {
     title: 'Show control',
     buttons: [
-      { id: 'start', label: 'Start', hint: 'Start Tracking', tone: 'go', disabledWhen: ['idle', 'tracking', 'recording'] },
+      { id: 'start', label: 'Start', hint: 'Start Tracking', tone: 'go', disabledWhen: ['idle', 'tracking', 'recording', 'uploading'] },
       { id: 'stop', label: 'Stop', hint: 'Stop Recording', tone: 'stop', disabledWhen: ['idle', 'ready'] },
-      { id: 'capture', label: 'Capture', hint: 'Capture Still Image', disabledWhen: ['idle', 'ready', 'tracking', 'recording'] },
-      { id: 'upload', label: 'Upload', disabledWhen: ['idle', 'ready', 'tracking', 'recording', 'recorded', 'uploaded'] },
+      { id: 'capture', label: 'Capture', hint: 'Capture Still Image', disabledWhen: ['idle', 'ready', 'tracking', 'recording', 'uploading'] },
+      { id: 'upload', label: 'Upload', disabledWhen: ['idle', 'ready', 'tracking', 'recording', 'recorded', 'uploading', 'uploaded'] },
     ],
   },
   {
     title: 'Guest screen',
     buttons: [
-      { id: 'show_qr', label: 'Show QR', hint: 'Ask TD to send the QR to the guest tablet', disabledWhen: ['idle', 'ready', 'tracking', 'recording'] },
-      { id: 'reset', label: 'Reset guest', hint: 'Back to the welcome screen', disabledWhen: ['tracking', 'recording'] },
+      { id: 'show_qr', label: 'Show QR', hint: 'Ask TD to send the QR to the guest tablet', disabledWhen: ['idle', 'ready', 'tracking', 'recording', 'uploading'] },
+      { id: 'reset', label: 'Reset guest', hint: 'Back to the welcome screen', disabledWhen: ['tracking', 'recording', 'uploading'] },
     ],
   },
 ];
 
-type StatusTone = 'idle' | 'ready' | 'active' | 'live' | 'done';
+type StatusTone = 'idle' | 'ready' | 'active' | 'busy' | 'live' | 'done';
 
 interface StatusDisplay {
   label: string;
@@ -66,6 +66,7 @@ const STATUSES: Record<string, StatusDisplay> = {
   recording: { label: 'Recording', tone: 'live' },
   recorded: { label: 'Recording saved', tone: 'done' },
   captured: { label: 'Image captured', tone: 'done' },
+  uploading: { label: 'Uploading…', tone: 'busy', detail: () => 'Sending photos and video to the server' },
   uploaded: { label: 'Uploaded', tone: 'done' },
 };
 
