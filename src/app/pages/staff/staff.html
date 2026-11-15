@@ -6,6 +6,7 @@
     </div>
     <div class="topbar-actions">
       <app-connection-status />
+      <button type="button" class="btn link" (click)="searchOpen.set(true)">Search guest</button>
       <a class="btn btn-ghost link" routerLink="/">Guest screen</a>
     </div>
   </header>
@@ -78,3 +79,7 @@
     }
   </section>
 </main>
+
+@if (searchOpen()) {
+  <app-guest-search (close)="searchOpen.set(false)" />
+}

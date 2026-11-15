@@ -1,0 +1,65 @@
+<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="search-title">
+  <header class="head">
+    <h2 id="search-title">Search guest</h2>
+    <button type="button" class="btn btn-ghost small" (click)="refresh()" [disabled]="td.guestsLoading()">
+      Refresh
+    </button>
+    <button type="button" class="btn small" (click)="close.emit()">Close</button>
+  </header>
+
+  <input
+    class="input"
+    type="search"
+    placeholder="Type a name…"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="off"
+    spellcheck="false"
+    autofocus
+    [value]="query()"
+    (input)="query.set($any($event.target).value)"
+  />
+
+  <p class="state" aria-live="polite">
+    @if (td.guestsError(); as error) {
+      <span class="error">{{ error }}</span>
+      <button type="button" class="btn btn-ghost small" (click)="refresh()">Try again</button>
+    } @else if (td.guests() === null) {
+      Loading guests…
+    } @else {
+      {{ matches().length }} of {{ td.guests()!.length }} guests
+      @if (td.guestsLoading()) {
+        · Refreshing…
+      }
+      @if (matches().length > maxRows) {
+        · showing newest {{ maxRows }}, keep typing to narrow down
+      }
+    }
+  </p>
+
+  <ul class="results">
+    @for (guest of shown(); track key(guest, $index)) {
+      @let k = key(guest, $index);
+      <li>
+        <button type="button" class="row" [class.open]="selected() === k" (click)="toggle(k)">
+          <span class="name">{{ guest.name || '(no name)' }}</span>
+          <span class="when">{{ when(guest) }}</span>
+        </button>
+        @if (selected() === k) {
+          <dl class="details">
+            <dt>Name</dt>
+            <dd>{{ guest.name || '—' }}</dd>
+            <dt>Checked in</dt>
+            <dd>{{ guest.timeText || '—' }}</dd>
+            <dt>UUID</dt>
+            <dd><code>{{ guest.uuid || '—' }}</code></dd>
+          </dl>
+        }
+      </li>
+    } @empty {
+      @if (td.guests() !== null) {
+        <li class="empty">{{ query() ? 'No guest matches “' + query() + '”.' : 'TD sent an empty guest list.' }}</li>
+      }
+    }
+  </ul>
+</div>

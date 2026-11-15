@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TdSocket } from '../../td-socket';
 import { ConnectionStatus } from '../../components/connection-status/connection-status';
+import { GuestSearch } from '../../components/guest-search/guest-search';
 
 interface StaffButton {
   /** Sent to TD as { "type": "button", "id": <id> } */
@@ -72,7 +73,7 @@ const STATUSES: Record<string, StatusDisplay> = {
 
 @Component({
   selector: 'app-staff',
-  imports: [ConnectionStatus, DatePipe, RouterLink],
+  imports: [ConnectionStatus, DatePipe, GuestSearch, RouterLink],
   templateUrl: './staff.html',
   styleUrl: './staff.css',
 })
@@ -80,6 +81,8 @@ export class Staff {
   protected readonly td = inject(TdSocket);
   protected readonly groups = GROUPS;
   protected readonly showLog = signal(true);
+  /** Guest search overlay; opening it asks TD for the guest table. */
+  protected readonly searchOpen = signal(false);
   /** Briefly highlights the last button pressed, as touch feedback. */
   protected readonly lastPressed = signal<string | null>(null);
   private pressTimer?: ReturnType<typeof setTimeout>;

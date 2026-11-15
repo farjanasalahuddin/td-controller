@@ -45,6 +45,7 @@ Production build: `ng build`, then `npm run serve:ssr:td-controller` (serves on 
 - **System status card** — current TD status with the time it arrived.
 - **Control buttons** — each press sends `{"type":"button","id":"<id>"}` to TD. Buttons are disabled based on the current status.
 - **Messages log** — last 50 messages to and from TD, for debugging.
+- **Search guest** — opens a full-screen search. Opening it (or tapping Refresh) asks TD for its guest table; the staff iPad then filters it as you type (name, ignoring case and accents, or the start of a UUID), newest first. Tapping a guest shows their name, check-in time and UUID. The list is cleared when the search is closed. If TD doesn't answer within 5 seconds it shows "Try again".
 
 There is no login on `/staff`; it is simply not linked from the guest page.
 
@@ -59,6 +60,7 @@ All messages are JSON.
 | `{"type":"hello","role":"home"\|"staff"}` | On every connect/reconnect |
 | `{"type":"name","value":"Sam","id":"<uuid>"}` | Guest taps Continue |
 | `{"type":"button","id":"start"}` | Staff button pressed (ids below) |
+| `{"type":"get_guests"}` | Staff opens Search guest or taps Refresh |
 | `{"type":"button","id":"reset"}` | Staff "Reset guest", guest "Not you? Start over", or guest Done on the QR screen (also after the 2-minute timeout) |
 
 ### TD → tablet
@@ -70,6 +72,7 @@ All messages are JSON.
 | `{"type":"show_qr","url":"https://…"}` | Guest iPad shows a QR code for the URL |
 | `{"type":"show_qr","image":"data:image/png;base64,…"}` | Guest iPad shows that image as-is |
 | `{"type":"reset"}` | Guest iPad returns to Welcome |
+| `{"type":"guests","guests":[{"name":"Sam","uuid":"…","time":"2026-11-15 14:32:05"}, …]}` | Reply to `get_guests` (send it only to the asking tablet). Keys are matched case-insensitively: `name`/`fullName`, `uuid`/`id`, `time`/`datetime`/`date`/`timestamp`. Time should include the date (`YYYY-MM-DD HH:MM:SS` or ISO) |
 
 Non-JSON replies from TD are logged but otherwise ignored (they no longer close the socket).
 
@@ -96,6 +99,7 @@ Unknown statuses are shown as their raw text. Labels and colours are in `STATUSE
 The TD side lives in the `.toe` project, not this repo. It needs:
 
 - **Web Server DAT** on port `9980`. Its callbacks track connected tablets by role (from `hello`), handle `name` / `button` messages, and expose a `set_status(status, name=None)` helper that broadcasts `system` messages and stores the latest one, which is sent to each tablet on `hello`.
+- **Guest table** (Table DAT, also written to CSV) with a header row, e.g. `name | uuid | time`. On `get_guests`, the callbacks turn each row into a dict using the header and reply with `webSocketSendText(client, ...)` to that tablet only.
 - **Execute DAT** `onStart` → `set_status('idle')`, so tablets never stay on "Waiting for TD…".
 - **Web Client DAT** + an upload Text DAT for sending the guest's photos/video to the backend as `multipart/form-data` (`POST /sessions/<uuid>/files`, field `files` repeated, plus `fullName`). Call `set_status('uploading')` when the request is sent; on a 2xx response → `set_status('uploaded')`.
 
@@ -127,6 +131,7 @@ src/app/
   components/welcome/           Name entry + waiting screen
   components/qr-display/        QR code screen
   components/connection-status/ Connected / Connecting / Disconnected pill
+  components/guest-search/      Staff guest search overlay
 src/server.ts                   SSR server + /api/kiosk forwarding
 src/styles.css                  Global theme and touch-sized controls
 ```

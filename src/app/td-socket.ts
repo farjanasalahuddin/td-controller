@@ -9,11 +9,23 @@ const TD_PORT = 9980;
 const RECONNECT_MS = 2000;
 /** Guest's content page; the QR code shown after upload links to QR_LINK_BASE + <uuid>. */
 const QR_LINK_BASE = 'https://192.168.10.94:18443/s/';
+/** Give up waiting for TD's guest list after this long. */
+const GUESTS_TIMEOUT_MS = 5000;
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'closed';
 export type ClientRole = 'home' | 'staff';
 /** Which view the guest-facing home page is showing. */
 export type HomeScreen = 'welcome' | 'waiting' | 'qr';
+
+/** One row of TD's guest table, as used by the staff search. */
+export interface Guest {
+  uuid: string;
+  name: string;
+  /** Parsed check-in time, or null if TD's value couldn't be read as a date. */
+  time: Date | null;
+  /** The time exactly as TD sent it. */
+  timeText: string;
+}
 
 export interface LogEntry {
   time: Date;
@@ -26,6 +38,9 @@ export interface LogEntry {
  *   { "type": "show_qr", "url": "https://..." }   -> home shows a QR code for that URL
  *   { "type": "show_qr", "image": "data:image/png;base64,..." } -> home shows that image as-is
  *   { "type": "reset" }                            -> home goes back to the welcome screen
+ *   { "type": "guests", "guests": [ { "name": "Sam", "uuid": "...", "time": "2026-11-15 14:32:05" }, ... ] }
+ *        -> reply to get_guests; the staff search filters this list. Keys are matched
+ *           case-insensitively (name/fullName, uuid/id, time/datetime/date/timestamp).
  *   { "type": "system", "status": "tracking" }     -> staff page status card. Known statuses:
  *        idle | ready | tracking | recording | recorded | captured | uploaded
  *        (anything else is shown as-is). Optional "name" adds the guest's name,
@@ -37,6 +52,7 @@ export interface LogEntry {
  *   { "type": "hello",  "role": "home" | "staff" } -> sent on every (re)connect
  *   { "type": "name",   "value": "Sam", "id": "<uuid>" } -> guest submitted their name; id is a
  *        new UUID v4 for this guest (use it for file names / the upload)
+ *   { "type": "get_guests" }                       -> staff opened Search guest; reply with "guests"
  *   { "type": "button", "id": "start" }            -> a staff (or guest) button was pressed
  *        Guest tablet sends "reset" from "Not you? Start over" and from Done / QR timeout
  *        (same id as the staff Reset guest button)
@@ -62,6 +78,12 @@ export class TdSocket {
   readonly systemStatusAt = signal<Date | null>(null);
   /** Guest name sent with the latest system status, if any (e.g. with "ready"). */
   readonly systemGuestName = signal<string | null>(null);
+
+  /** Guest list from TD for the staff search. null = not loaded (or cleared on close). */
+  readonly guests = signal<Guest[] | null>(null);
+  readonly guestsLoading = signal(false);
+  readonly guestsError = signal<string | null>(null);
+  private guestsTimer?: ReturnType<typeof setTimeout>;
 
   // Recent traffic, shown on the staff page.
   readonly log = signal<LogEntry[]>([]);
@@ -124,6 +146,26 @@ export class TdSocket {
     return id;
   }
 
+  /** Ask TD for its current guest table (staff search). TD answers with { "type": "guests" }. */
+  requestGuests() {
+    this.guestsLoading.set(true);
+    this.guestsError.set(null);
+    this.send({ type: 'get_guests' });
+    clearTimeout(this.guestsTimer);
+    this.guestsTimer = setTimeout(() => {
+      this.guestsLoading.set(false);
+      this.guestsError.set("TD didn't send the guest list.");
+    }, GUESTS_TIMEOUT_MS);
+  }
+
+  /** Forget the guest list (search closed), so names don't stay on the staff iPad. */
+  clearGuests() {
+    clearTimeout(this.guestsTimer);
+    this.guests.set(null);
+    this.guestsLoading.set(false);
+    this.guestsError.set(null);
+  }
+
   /** Return the home page to the welcome screen locally (TD can also do this with "reset"). */
   resetHome() {
     this.screen.set('welcome');
@@ -154,6 +196,16 @@ export class TdSocket {
         break;
       case 'reset':
         this.resetHome();
+        break;
+      case 'guests':
+        clearTimeout(this.guestsTimer);
+        this.guestsLoading.set(false);
+        if (Array.isArray(data['guests'])) {
+          this.guests.set(data['guests'].map(toGuest).filter((g): g is Guest => g !== null));
+          this.guestsError.set(null);
+        } else {
+          this.guestsError.set('TD sent "guests" without a "guests" list.');
+        }
         break;
       case 'system':
         console.log('[TD →] system status:', data['status'], typeof data['status']);
@@ -202,6 +254,24 @@ function resolveTdUrl(): string {
   const override = new URLSearchParams(location.search).get('td');
   if (override) return override.startsWith('ws') ? override : `ws://${override}`;
   return `ws://${location.hostname || 'localhost'}:${TD_PORT}`;
+}
+
+/** Turn one entry of TD's guest list into a Guest. Header names are matched loosely. */
+function toGuest(row: unknown): Guest | null {
+  if (!row || typeof row !== 'object') return null;
+  const byKey = new Map(
+    Object.entries(row).map(([k, v]) => [k.toLowerCase().replace(/[\s_-]/g, ''), String(v ?? '').trim()]),
+  );
+  const pick = (...keys: string[]) => keys.map(k => byKey.get(k)).find(v => v) ?? '';
+
+  const name = pick('name', 'fullname', 'guest', 'guestname');
+  const uuid = pick('uuid', 'id', 'guestid', 'sessionid');
+  if (!name && !uuid) return null; // blank row
+
+  const timeText = pick('time', 'datetime', 'date', 'timestamp', 'created', 'createdat');
+  // "2026-11-15 14:32:05" -> "2026-11-15T14:32:05" so Safari reads it (as local time).
+  const parsed = timeText ? new Date(timeText.replace(/^(\d{4}-\d{2}-\d{2}) /, '$1T')) : null;
+  return { name, uuid, timeText, time: parsed && !isNaN(parsed.getTime()) ? parsed : null };
 }
 
 /**
